@@ -1,4 +1,4 @@
-# How-to-fit-a-snake-in-a-box-gng
+# How-to-fit-a-snake-in-a-box-gng-or-just-Neon-Snake
 
 How-to-fit-a-snake-in-a-box-gng is a compact Snake game written as a single HTML/JavaScript data:text/html, URI and optimized to fit inside a strict 3,072-byte limit.
 
