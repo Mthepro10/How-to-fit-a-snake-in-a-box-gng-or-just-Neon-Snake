@@ -50,6 +50,6 @@ size: 3,070 / 3,072 bytes.
 
 I started this project without really knowing JavaScript—only a very small amount of cybersecurity knowledge. I ended up combining that tiny bit of knowledge with the skills I already had in code compression and optimization. The main challenge was fitting a complete playable game, with power-ups, a boss fight, Easter eggs, keyboard and mobile controls, visual effects, levels, lives, and score tracking, into only 3,072 bytes.
 
-It was a fun exercise in making every byte count while still keeping the game playable and recognizable as a full Snake game.
+It was a reeeeaaaallllyyy fun exercise in making every byte count while still keeping the game playable and recognizable as a full Snake game.
 
-Thanks for checking out the project.
+I am looking forward to see your opinion :))) THX for checking out my project !!
