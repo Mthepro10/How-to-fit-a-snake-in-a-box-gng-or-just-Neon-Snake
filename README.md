@@ -26,7 +26,7 @@ Eat the cyan orbs to damage it. Each orb removes 1 HP. Defeating the boss awards
 
 ## Codes & Easter Eggs
 
-HACK: Press Shift + \, then Enter to gain +30 points.
+HACK: Press Shift + \\, then Enter to gain +30 points.
 
 KONAMI: ↑ ↑ ↓ ↓ ← → ← → B A activates Rainbow Mode and gives +1 life.
 
