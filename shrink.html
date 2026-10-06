@@ -54,7 +54,6 @@ let tickN=0;
 let state='wait';
 let rainbow=false;
 let msgUntil=0;
-let hit42=false;
 let keyBuf=[];
 let hackReady=false;
 let best=0;
@@ -231,11 +230,7 @@ function tick(){
 
   if(!boss&&!foods.some(f=>f.t==='n'))spawnFood('n');
   if(boss&&!foods.some(f=>f.t==='o'))spawnFood('o');
-
-  if(score>=42&&!hit42){
-    hit42=true;
-    say('42 - raspunsul la tot');
-  }
+  
   if(score>best)best=score;
 }
 
