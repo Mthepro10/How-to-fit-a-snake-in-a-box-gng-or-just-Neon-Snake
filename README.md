@@ -30,8 +30,6 @@ HACK: Press Shift + \\, then Enter to gain +30 points.
 
 KONAMI: ↑ ↑ ↓ ↓ ← → ← → B A activates Rainbow Mode and gives +1 life.
 
-42: Reaching a score of 42 triggers a small Easter egg message.
-
 ## Controls
 
 PC: Arrow keys or WASD.
