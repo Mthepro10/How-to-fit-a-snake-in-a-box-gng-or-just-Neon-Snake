@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neon Snake</title>
+<style>
+body{
+  margin:0;
+  height:100vh;
+  background:#0d0618;
+  color:#7fffe7;
+  font:18px monospace;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  touch-action:none;
+}
+canvas{
+  background:#160b25;
+  box-shadow:0 0 25px #d95cff,0 0 60px #38e8ff;
+  max-width:90vw;
+  max-height:70vh;
+}
+#hud{
+  margin-bottom:6px;
+  color:#7fffe7;
+  text-shadow:0 0 10px #38e8ff;
+  text-align:center;
+}
+#msg{
+  height:24px;
+  margin-bottom:6px;
+  color:#ffe58a;
+  text-shadow:0 0 10px #ffd75a;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+<div id="hud"></div>
+<div id="msg"></div>
+<canvas id="cv" width="400" height="400"></canvas>
+<script>
+const G=20;
+const T=20;
+const ctx=cv.getContext('2d');
+
+let snake,dir,nextDir,foods,walls,boss;
+let lives,score,level,eaten;
+let inv,ghost,slow;
+let tickN=0;
+let state='wait';
+let rainbow=false;
+let msgUntil=0;
+let hit42=false;
+let keyBuf=[];
+let hackReady=false;
+let best=0;
+try{best=+localStorage.getItem('neonSnakeBest')||0}catch(e){}
+
+const rnd=n=>Math.floor(Math.random()*n);
+const eq=(a,b)=>a.x===b.x&&a.y===b.y;
+const inBoss=p=>boss&&p.x>=boss.x&&p.x<boss.x+3&&p.y>=boss.y&&p.y<boss.y+3;
+
+function say(text,ms=2500){
+  msg.textContent=text;
+  msgUntil=Date.now()+ms;
+}
+
+function occupied(p){
+  return snake.some(s=>eq(s,p))||walls.some(w=>eq(w,p))||foods.some(f=>eq(f,p))||inBoss(p);
+}
+
+function freeCell(minDist=0){
+  for(let i=0;i<300;i++){
+    const p={x:rnd(G),y:rnd(G)};
+    const d=Math.abs(p.x-snake[0].x)+Math.abs(p.y-snake[0].y);
+    if(!occupied(p)&&d>=minDist)return p;
+  }
+  return null;
+}
+
+function spawnFood(type){
+  const p=freeCell();
+  if(!p)return;
+  const ttl=(type==='n'||type==='o')?Infinity:60;
+  foods.push({x:p.x,y:p.y,t:type,ttl});
+}
+
+function start(){
+  snake=[{x:10,y:10},{x:9,y:10},{x:8,y:10}];
+  dir=nextDir={x:1,y:0};
+  foods=[];
+  walls=[];
+  boss=null;
+  lives=3;
+  score=0;
+  level=1;
+  eaten=0;
+  inv=ghost=slow=0;
+  hit42=false;
+  hackReady=false;
+  state='wait';
+  spawnFood('n');
+  say('Apasa o sageata ca sa incepi');
+}
+
+function levelUp(){
+  level++;
+  say('Nivel '+level+'!');
+  if(level%5===0)startBoss();
+  else if(level>=3)addWall();
+}
+
+function addWall(){
+  if(walls.length>30)return;
+  const horiz=Math.random()<.5;
+  for(let tries=0;tries<100;tries++){
+    const x=rnd(G-3),y=rnd(G-3);
+    const seg=[0,1,2].map(i=>({x:x+(horiz?i:0),y:y+(horiz?0:i)}));
+    const ok=seg.every(p=>!occupied(p)&&Math.abs(p.x-snake[0].x)+Math.abs(p.y-snake[0].y)>=5);
+    if(ok){walls.push(...seg);return;}
+  }
+}
+
+function startBoss(){
+  walls=[];
+  foods=[];
+  for(let tries=0;tries<100;tries++){
+    const x=rnd(G-3),y=rnd(G-3);
+    const d=Math.abs(x+1-snake[0].x)+Math.abs(y+1-snake[0].y);
+    if(d>=7){boss={x,y,hp:3};break;}
+  }
+  if(!boss)boss={x:0,y:0,hp:3};
+  say('BOSS! Mananca orbii cyan ca sa-l invingi',4000);
+  spawnFood('o');
+}
+
+function moveBoss(){
+  let dx=0,dy=0;
+  if(Math.random()<.5){
+    const cx=boss.x+1,cy=boss.y+1;
+    if(Math.abs(snake[0].x-cx)>Math.abs(snake[0].y-cy))dx=Math.sign(snake[0].x-cx);
+    else dy=Math.sign(snake[0].y-cy);
+  }else{
+    [dx,dy]=[[1,0],[-1,0],[0,1],[0,-1]][rnd(4)];
+  }
+  boss.x=Math.max(0,Math.min(G-3,boss.x+dx));
+  boss.y=Math.max(0,Math.min(G-3,boss.y+dy));
+}
+
+function hurt(){
+  if(inv>0||ghost>0)return;
+  lives--;
+  if(lives<=0)return gameOver();
+  inv=15;
+  say('Aoleu! Vieti ramase: '+lives);
+}
+
+function gameOver(){
+  state='over';
+  if(score>best){
+    best=score;
+    try{localStorage.setItem('neonSnakeBest',best)}catch(e){}
+  }
+}
+
+function eat(f){
+  if(f.t==='n'){
+    score+=10;
+    eaten++;
+    if(eaten%5===0)levelUp();
+    if(!boss){
+      spawnFood('n');
+      if(!foods.some(x=>x.t!=='n')){
+        const r=Math.random();
+        if(r<.20)spawnFood('g');
+        else if(r<.32)spawnFood('s');
+        else if(r<.40)spawnFood('h');
+      }
+    }
+    return true;
+  }
+  if(f.t==='g'){score+=50;say('+50 BONUS!');return true}
+  if(f.t==='s'){slow=40;say('Slow motion!');return false}
+  if(f.t==='h'){ghost=40;say('Mod fantoma: treci prin tot!');return false}
+  if(f.t==='o'){
+    boss.hp--;
+    score+=15;
+    if(boss.hp<=0){
+      boss=null;
+      score+=30;
+      lives=Math.min(5,lives+1);
+      say('BOSS INVINS! +1 viata',3500);
+      spawnFood('n');
+    }else{
+      say('Lovitura! Mai are '+boss.hp);
+      spawnFood('o');
+    }
+    return true;
+  }
+  return false;
+}
+
+function tick(){
+  dir=nextDir;
+  const h={
+    x:(snake[0].x+dir.x+G)%G,
+    y:(snake[0].y+dir.y+G)%G
+  };
+
+  if(boss&&tickN%3===0)moveBoss();
+
+  const bad=walls.some(w=>eq(w,h))||snake.slice(0,-1).some(p=>eq(p,h))||inBoss(h);
+  if(bad)hurt();
+  if(state==='over')return;
+
+  snake.unshift(h);
+
+  let grow=false;
+  const i=foods.findIndex(f=>eq(f,h));
+  if(i>=0)grow=eat(foods.splice(i,1)[0]);
+  if(!grow)snake.pop();
+
+  foods.forEach(f=>f.ttl--);
+  foods=foods.filter(f=>f.ttl>0);
+  if(inv>0)inv--;
+  if(ghost>0)ghost--;
+  if(slow>0)slow--;
+
+  if(!boss&&!foods.some(f=>f.t==='n'))spawnFood('n');
+  if(boss&&!foods.some(f=>f.t==='o'))spawnFood('o');
+
+  if(score>=42&&!hit42){
+    hit42=true;
+    say('42 - raspunsul la tot');
+  }
+  if(score>best)best=score;
+}
+
+function delay(){
+  const d=Math.max(65,230-level*13);
+  return slow>0?d*1.7:d;
+}
+
+function loop(){
+  tickN++;
+  if(state==='run')tick();
+  draw();
+  setTimeout(loop,state==='run'?delay():100);
+}
+
+function glow(color,blur=15){
+  ctx.fillStyle=ctx.shadowColor=color;
+  ctx.shadowBlur=blur;
+}
+
+function circle(p,color){
+  glow(color);
+  ctx.beginPath();
+  ctx.arc(p.x*T+T/2,p.y*T+T/2,T/2-2,0,7);
+  ctx.fill();
+}
+
+function draw(){
+  ctx.globalAlpha=1;
+  ctx.clearRect(0,0,G*T,G*T);
+
+  ctx.shadowBlur=0;
+  ctx.fillStyle='#21112f';
+  for(let i=0;i<G;i++)for(let j=0;j<G;j++)ctx.fillRect(i*T+1,j*T+1,T-2,T-2);
+
+  glow('#5c7cff');
+  walls.forEach(w=>ctx.fillRect(w.x*T+1,w.y*T+1,T-2,T-2));
+
+  foods.forEach(f=>{
+    if(f.t==='n'){glow('#ff5bd7');ctx.fillRect(f.x*T+2,f.y*T+2,T-4,T-4)}
+    if(f.t==='g')circle(f,tickN%4<2?'#ffe56b':'#ffbd4a');
+    if(f.t==='s')circle(f,'#6bbdff');
+    if(f.t==='h')circle(f,'#e8ffff');
+    if(f.t==='o')circle(f,'#4de6ff');
+  });
+
+  if(boss){
+    glow('#ff6b7a',25);
+    ctx.fillRect(boss.x*T+1,boss.y*T+1,3*T-2,3*T-2);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='#fff';
+    ctx.fillRect(boss.x*T+12,boss.y*T+14,8,8);
+    ctx.fillRect(boss.x*T+40,boss.y*T+14,8,8);
+    for(let i=0;i<boss.hp;i++)ctx.fillRect(boss.x*T+8+i*18,boss.y*T+42,14,8);
+  }
+
+  snake.forEach((p,i)=>{
+    let a=Math.max(.15,1-i/snake.length);
+    if(inv>0&&tickN%2)a*=.4;
+    ctx.globalAlpha=a;
+    const col=rainbow?`hsl(${(tickN*12+i*20)%360},100%,55%)`:ghost>0?'#9ff6e8':'#42f5b3';
+    glow(col);
+    ctx.fillRect(p.x*T+1,p.y*T+1,T-2,T-2);
+  });
+  ctx.globalAlpha=1;
+
+  if(state!=='run'){
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(13,6,24,.72)';
+    ctx.fillRect(0,0,G*T,G*T);
+    glow('#6fefff',10);
+    ctx.textAlign='center';
+    ctx.font='bold 24px monospace';
+    const txt={wait:'NEON SNAKE',pause:'PAUZA',over:'GAME OVER'}[state];
+    ctx.fillText(txt,200,180);
+    ctx.font='14px monospace';
+    if(state==='wait')ctx.fillText('sageti / WASD / swipe',200,215);
+    if(state==='pause')ctx.fillText('Space ca sa continui',200,215);
+    if(state==='over'){
+      ctx.fillText('Scor '+score+'  Record '+best,200,215);
+      ctx.fillText('Enter sau tap = restart',200,240);
+    }
+    ctx.shadowBlur=0;
+  }
+
+  hud.textContent=`Scor ${score} | Record ${best} | Nivel ${level} | ${'♥'.repeat(lives)}`+
+    (slow>0?' | SLOW':'')+(ghost>0?' | GHOST':'');
+  if(Date.now()>msgUntil)msg.textContent='';
+}
+
+function steer(dx,dy){
+  if(dx===-dir.x&&dy===-dir.y)return;
+  nextDir={x:dx,y:dy};
+  if(state==='wait'){state='run';msg.textContent='';}
+}
+
+const KONAMI=['arrowup','arrowup','arrowdown','arrowdown','arrowleft','arrowright','arrowleft','arrowright','b','a'];
+const KEYS={
+  arrowup:[0,-1],w:[0,-1],
+  arrowdown:[0,1],s:[0,1],
+  arrowleft:[-1,0],a:[-1,0],
+  arrowright:[1,0],d:[1,0]
+};
+
+addEventListener('keydown',e=>{
+  const k=e.key.toLowerCase();
+
+  keyBuf.push(k);
+  if(keyBuf.length>10)keyBuf.shift();
+
+  if(keyBuf.join()===KONAMI.join()){
+    rainbow=!rainbow;
+    lives=Math.min(5,lives+1);
+    say('KONAMI! Rainbow mode + o viata',4000);
+    keyBuf=[];
+  }
+
+  if(e.code==='Backslash'&&e.shiftKey)hackReady=true;
+  if(k==='enter'&&hackReady){
+    score+=30;
+    hackReady=false;
+    say('HACK! +30 puncte',3000);
+  }
+
+  if(k==='enter'&&state==='over')return start();
+  if(k===' '){
+    e.preventDefault();
+    if(state==='run')state='pause';
+    else if(state==='pause')state='run';
+    return;
+  }
+  if(KEYS[k]){
+    e.preventDefault();
+    if(state!=='pause'&&state!=='over')steer(...KEYS[k]);
+  }
+});
+
+let sx,sy;
+addEventListener('touchstart',e=>{
+  sx=e.touches[0].clientX;
+  sy=e.touches[0].clientY;
+});
+
+addEventListener('touchend',e=>{
+  const q=e.changedTouches[0];
+  const ax=q.clientX-sx;
+  const ay=q.clientY-sy;
+  if(Math.max(Math.abs(ax),Math.abs(ay))<20){
+    if(state==='over')start();
+    return;
+  }
+  if(state==='pause'||state==='over')return;
+  if(Math.abs(ax)>Math.abs(ay))steer(Math.sign(ax),0);
+  else steer(0,Math.sign(ay));
+});
+
+start();
+loop();
+</script>
+</body>
+</html>
