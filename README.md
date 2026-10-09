@@ -1,6 +1,6 @@
 # How-to-fit-a-snake-in-a-box-gng-or-just-Neon-Snake
 
-How-to-fit-a-snake-in-a-box-gng-or-just-Neon-Snake is a compact Snake game written as a single HTML/JavaScript data:text/html, URI and optimized to fit inside a strict 3,072-byte limit.
+How-to-fit-a-snake-in-a-box-gng-or-just-Neon-Snake is a compact Snake game :).
 
 ## Gameplay
 
@@ -20,7 +20,7 @@ Special power-ups appear randomly after normal food is eaten.
 
 ## Boss
 
-A boss appears every 5th level with 3 HP. When a boss starts, the wall arena is cleared.
+A boss appears every level that is multiple by 5(not hard math though) with 3 HP. When a boss starts, the wall arena is cleared.
 
 Eat the cyan orbs to damage it. Each orb removes 1 HP. Defeating the boss awards extra points and +1 life, up to a maximum of 5 lives.
 
@@ -42,11 +42,11 @@ Enter or tap after Game Over: Restart.
 
 ## Technical Notes
 
-size: 3,070 / 3,072 bytes.
+size: 3,070 / 3,072 bytes. (really cooked here)
 
 ## Project Description
 
-I started this project without really knowing JavaScript—only a very small amount of cybersecurity knowledge. I ended up combining that tiny bit of knowledge with the skills I already had in code compression and optimization. The main challenge was fitting a complete playable game, with power-ups, a boss fight, Easter eggs, keyboard and mobile controls, visual effects, levels, lives, and score tracking, into only 3,072 bytes.
+I started this project without really knowing JavaScript—only a very small amount of it in cybersecurity. I ended up doing trial-and-error for more than 15h, but it worked in the final (wow). The main challenge was fitting a complete playable game, with power-ups, a boss fight, Easter eggs, keyboard and mobile controls, visual effects, levels, lives, and score tracking, into only 3,072 bytes.
 
 It was a reeeeaaaallllyyy fun exercise in making every byte count while still keeping the game playable and recognizable as a full Snake game.
 
